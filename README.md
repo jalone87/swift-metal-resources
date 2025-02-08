@@ -1,0 +1,1 @@
+# swift-metal-resources
