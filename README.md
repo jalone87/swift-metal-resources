@@ -12,6 +12,7 @@ Studying Metal and Accelerate API for Audio Processing and Visualization
 ##### Accelerate
 - https://medium.com/better-programming/audio-visualization-in-swift-using-metal-accelerate-part-1-390965c095d7
 - https://medium.com/better-programming/audio-visualization-in-swift-using-metal-accelerate-part-2-7ec8df4def91
+- https://github.com/barbulescualex/MetalAudioVisualizer/tree/master/starter/AudioVisualizer
 
 ##### SIMD 
 Image processing and CPU computing algorithms and data structures
