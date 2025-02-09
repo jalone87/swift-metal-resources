@@ -11,7 +11,8 @@ class ViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let metalCircleView = MetalCircleView()
+//        let metalCircleView = MetalCircleView()
+        let metalCircleView = AudioVisualizerView()
         view.addSubview(metalCircleView)
         
         //constraining to window
