@@ -134,7 +134,8 @@ class MetalCircleView: NSView, MTKViewDelegate {
         // --- We'll be encoding commands here --- //
         
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 1081)
+        // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
         
         // --- end --- //
         
