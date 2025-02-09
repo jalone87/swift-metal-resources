@@ -6,6 +6,7 @@ Studying Metal and Accelerate API for Audio Processing and Visualization
 
 ##### Metal Shaders 
 - https://developer.apple.com/metal/Metal-Shading-Language-Specification.pdf
+- https://developer.apple.com/documentation/metal/using-a-render-pipeline-to-render-primitives
 - https://medium.com/better-programming/making-your-first-circle-using-metal-shaders-1e5049ec8505
 
 ##### Accelerate

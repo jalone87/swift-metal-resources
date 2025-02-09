@@ -9,8 +9,6 @@ import Cocoa
 import MetalKit
 import simd
 
-let varName: simd_float2
-
 /// from https://medium.com/better-programming/making-your-first-circle-using-metal-shaders-1e5049ec8505
 class MetalCircleView: NSView, MTKViewDelegate {
     
@@ -22,17 +20,24 @@ class MetalCircleView: NSView, MTKViewDelegate {
     /// represents the GPU
     private var metalDevice: MTLDevice!
     
+    /// the flow of commands to a gpu buffer
     private var metalCommandQueue: MTLCommandQueue!
     
-    // MARK: - Data Propperties
     
+    private var metalRenderPipelineState : MTLRenderPipelineState!
     
+    // MARK: - Data Properties
+    
+    var circleVertices = [simd_float2]()
+    
+    private var vertexBuffer: MTLBuffer!
     
     // MARK: - Init
     
     public required init() {
         super.init(frame: .zero)
         setupView()
+        createVertexPoints()
         setupMetal()
     }
     
@@ -68,8 +73,40 @@ class MetalCircleView: NSView, MTKViewDelegate {
         //creating the command queue
         metalCommandQueue = metalDevice.makeCommandQueue()!
         
+        //creating the render pipeline state
+        createPipelineState()
+        
+        //creates a MTLBuffer object by copying data from an existing storage allocation into a new allocation.
+        //turn the vertex points into buffer data
+        vertexBuffer = metalDevice.makeBuffer(bytes: circleVertices,
+                                              length: circleVertices.count * MemoryLayout<simd_float2>.stride,
+                                              options: [])!
+        
+        //draw
         metalView.needsDisplay = true
 
+    }
+    
+    // To use MTLRenderCommandEncoder to encode commands for a rendering pass,
+    // specify a MTLRenderPipelineState object that defines the graphics state,
+    // including vertex and fragment shader functions, before issuing any draw calls.
+    // To create a pipeline state, we need a MTLRenderPipelineDescriptor
+    fileprivate func createPipelineState(){
+        let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        
+        //finds the metal file from the main bundle
+        let library = metalDevice.makeDefaultLibrary()!
+        
+        //give the names of the function to the pipelineDescriptor
+        pipelineDescriptor.vertexFunction = library.makeFunction(name: "vertexShader")
+        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "fragmentShader")
+        
+        //set the pixel format to match the MetalView's pixel format
+        pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
+        
+        //make the pipelinestate using the gpu interface and the pipelineDescriptor
+        metalRenderPipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        
     }
     
     // MARK: - MTKViewDelegate
@@ -91,7 +128,15 @@ class MetalCircleView: NSView, MTKViewDelegate {
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
         
-        /*********** We'll be encoding commands here **************/
+        // We tell it what render pipeline to use
+        renderEncoder.setRenderPipelineState(metalRenderPipelineState)
+        
+        // --- We'll be encoding commands here --- //
+        
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 1081)
+        
+        // --- end --- //
         
         // end the encoding and fire off the commandBuffer to be executed on the GPU
         renderEncoder.endEncoding()
@@ -99,6 +144,31 @@ class MetalCircleView: NSView, MTKViewDelegate {
         // display  in the view. currentDrawable is a drawable representing the current frame
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
+        
+    }
+    
+    fileprivate func createVertexPoints(){
+        
+        // we want to create a disc, made of triangles in a circle
+        func rads(forDegree d: Float)->Float32{
+            return (Float.pi*d)/180
+        }
+        
+        let origin = simd_float2(0, 0)
+
+        for i in 0...720 {
+            let degree = Float(Float(i)/2.0)
+            let position: simd_float2 = [cos(rads(forDegree: degree)),
+                                         sin(rads(forDegree: degree))]
+            circleVertices.append(position)
+            
+            if (i+1)%2 == 0 {
+                circleVertices.append(origin)
+            }
+        }
+        
+        // Clip space is a 2D coordinate system that maps the viewport area to a [-1.0, 1.0]
+        // this will match the MTKView viewport area (unless we override/redefine it)
         
     }
 }
