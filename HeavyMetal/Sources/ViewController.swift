@@ -88,9 +88,20 @@ class ViewController: NSViewController {
         } catch let error {
             print(error.localizedDescription)
         }
+        
+        //tap it to get the buffer data at playtime
+        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: nil) { (buffer, time) in
+            //The tapBlock may be invoked on a thread other than the main thread. good, most likely we are not on main
+            self.processAudioData(buffer: buffer)
+        }
 
         //start playing the music!
         player.play()
+    }
+    
+    func processAudioData(buffer: AVAudioPCMBuffer){
+        guard let channelData = buffer.floatChannelData?[0] else {return}
+        let frames = buffer.frameLength
     }
 
 }
