@@ -76,4 +76,45 @@ class SignalProcessing {
 
         return vals
     }
+    
+    
+    static func fft(data: UnsafeMutablePointer<Float>, setup: OpaquePointer) -> [Float] {
+        
+        // -- 1. Calculate FFT (a matrix of frequncy-buckets and magnitudes, expressed as real+iimaginary parts)
+        
+        //output setup
+        var realIn = [Float](repeating: 0, count: 1024)
+        var imagIn = [Float](repeating: 0, count: 1024)
+        var realOut = [Float](repeating: 0, count: 1024)
+        var imagOut = [Float](repeating: 0, count: 1024)
+
+        //fill in real input part with audio samples
+        for i in 0...1023 {
+            realIn[i] = data[i]
+        }
+
+        // https://developer.apple.com/documentation/accelerate/1450538-vdsp_dft_execute
+        vDSP_DFT_Execute(setup, &realIn, &imagIn, &realOut, &imagOut)
+        //our results are now inside realOut and imagOut
+        
+        // -- 2. Calculate a magnitudes of each frequency
+        
+        //package it inside a complex vector representation used in the vDSP framework
+        var complex = DSPSplitComplex(realp: &realOut, imagp: &imagOut)
+        
+        //setup magnitude output
+        var magnitudes = [Float](repeating: 0, count: 512)
+        
+        //calculate magnitude results
+        vDSP_zvabs(&complex, 1, &magnitudes, 1, 512)
+        
+        // -- 3. normalize results with a scaling based uniquely on esthetics of the resutls
+        
+        //normalize
+        var normalizedMagnitudes = [Float](repeating: 0.0, count: 512)
+        var scalingFactor = Float(25.0/512)
+        vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, 512)
+        
+        return normalizedMagnitudes
+    }
 }

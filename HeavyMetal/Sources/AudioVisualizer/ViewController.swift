@@ -7,6 +7,7 @@
 
 import Cocoa
 import AVFoundation
+import Accelerate
 
 class ViewController: NSViewController {
     
@@ -15,6 +16,13 @@ class ViewController: NSViewController {
     
     /// allows interpolating values in the UI, since the data tap is only every 0.1s
     var prevRMSValue: Float = 0.3 // 0.3 is min value
+    
+    /// fft setup object for 1024 values going forward (time-> frequency)
+    /// https://developer.apple.com/documentation/accelerate/1450061-vdsp_dft_zop_createsetup
+    /// to be fed to https://developer.apple.com/documentation/accelerate/1450538-vdsp_dft_execute
+    let fftSetup = vDSP_DFT_zop_CreateSetup(nil, 1024, vDSP_DFT_Direction.FORWARD)
+    
+    // TODO: destroy the setup object after it's not eneded anymore
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -94,10 +102,13 @@ class ViewController: NSViewController {
         guard let channelData = buffer.floatChannelData?[0] else {return}
         let frames = buffer.frameLength
         
+        // calculate loudness levels (rms and interpolation)
         let rmsValue = SignalProcessing.rms(data: channelData, frameLength: UInt(frames))
         let interpolatedResults = SignalProcessing.interpolate(current: rmsValue, previous: prevRMSValue)
         prevRMSValue = rmsValue
-        print(interpolatedResults)
+        
+        // calculate fft
+        let fftMagnitudes = SignalProcessing.fft(data: channelData, setup: fftSetup!)
     }
 
 }
