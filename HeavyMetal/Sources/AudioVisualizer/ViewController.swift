@@ -13,6 +13,9 @@ class ViewController: NSViewController {
     var engine : AVAudioEngine!
     var audioVisualizerView: AudioVisualizerView!
     
+    /// allows interpolating values in the UI, since the data tap is only every 0.1s
+    var prevRMSValue: Float = 0.3 // 0.3 is min value
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         let audioVisualizerView = AudioVisualizerView()
@@ -92,7 +95,9 @@ class ViewController: NSViewController {
         let frames = buffer.frameLength
         
         let rmsValue = SignalProcessing.rms(data: channelData, frameLength: UInt(frames))
-        print(rmsValue)
+        let interpolatedResults = SignalProcessing.interpolate(current: rmsValue, previous: prevRMSValue)
+        prevRMSValue = rmsValue
+        print(interpolatedResults)
     }
 
 }
