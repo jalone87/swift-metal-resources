@@ -28,9 +28,19 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     
     // MARK: - Data Properties
     
+    /// Array of vectors (SIMD library vectors) that hold x and y coordinates for consecutive triangles
     var circleVertices = [simd_float2]()
     
     private var vertexBuffer: MTLBuffer!
+    
+    private var loudnessUniformBuffer : MTLBuffer! // TODO: this is not initialized first time
+    public var loudnessMagnitude: Float = 0.3 {
+        didSet{
+            loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
+                                                           length: MemoryLayout<Float>.stride,
+                                                           options: [])!
+        }
+    }
     
     // MARK: - Init
     

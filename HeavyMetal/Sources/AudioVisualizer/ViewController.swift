@@ -11,7 +11,7 @@ import Accelerate
 
 class ViewController: NSViewController {
     
-    var engine : AVAudioEngine!
+    var engine: AVAudioEngine!
     var audioVisualizerView: AudioVisualizerView!
     
     /// allows interpolating values in the UI, since the data tap is only every 0.1s
@@ -106,6 +106,11 @@ class ViewController: NSViewController {
         let rmsValue = SignalProcessing.rms(data: channelData, frameLength: UInt(frames))
         let interpolatedResults = SignalProcessing.interpolate(current: rmsValue, previous: prevRMSValue)
         prevRMSValue = rmsValue
+        
+        //pass values to the audiovisualizer for the rendering
+        for rms in interpolatedResults {
+            audioVisualizerView.loudnessMagnitude = rms
+        }
         
         // calculate fft
         let fftMagnitudes = SignalProcessing.fft(data: channelData, setup: fftSetup!)
