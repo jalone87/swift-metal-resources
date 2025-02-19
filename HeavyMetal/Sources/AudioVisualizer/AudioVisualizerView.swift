@@ -23,7 +23,6 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     /// the flow of commands to a gpu buffer
     private var metalCommandQueue: MTLCommandQueue!
     
-    
     private var metalRenderPipelineState : MTLRenderPipelineState!
     
     // MARK: - Data Properties
@@ -72,9 +71,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
         metalView.delegate = self
         
-        //updates
-        metalView.isPaused = true
-        metalView.enableSetNeedsDisplay = true
+        //updates are automatic. these shall be enabled only if we want to disable automatic metal updates
+        // metalView.isPaused = true
+        // metalView.enableSetNeedsDisplay = true
         
         //connect to the gpu
         metalDevice = MTLCreateSystemDefaultDevice()
@@ -92,6 +91,11 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                               length: circleVertices.count * MemoryLayout<simd_float2>.stride,
                                               options: [])!
         
+        //initialize the freqeuencyBuffer data
+        loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
+                                                       length: MemoryLayout<Float>.stride,
+                                                       options: [])!
+
         //draw
         metalView.needsDisplay = true
 
@@ -144,6 +148,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         // --- We'll be encoding commands here --- //
         
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
         // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
         
@@ -158,7 +163,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
     }
     
-    fileprivate func createVertexPoints(){
+    private func createVertexPoints(){
         
         // we want to create a disc, made of triangles in a circle
         func rads(forDegree d: Float)->Float32{
