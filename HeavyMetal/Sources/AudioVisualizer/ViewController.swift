@@ -11,8 +11,8 @@ import Accelerate
 
 class ViewController: NSViewController {
     
-    var engine: AVAudioEngine!
-    var audioVisualizerView: AudioVisualizerView!
+    var engine = AVAudioEngine()
+    var audioVisualizerView: AudioVisualizerView = AudioVisualizerView()
     
     /// allows interpolating values in the UI, since the data tap is only every 0.1s
     var prevRMSValue: Float = 0.3 // 0.3 is min value
@@ -26,7 +26,6 @@ class ViewController: NSViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let audioVisualizerView = AudioVisualizerView()
         view.addSubview(audioVisualizerView)
         
         //constraining to window
@@ -41,9 +40,6 @@ class ViewController: NSViewController {
     func setupAudio() {
         
         /* Setup & Start Engine */
-        
-        //initialize it
-        engine = AVAudioEngine()
         
         //initializing the mainMixerNode singleton which will connect to the default output node
         _ = engine.mainMixerNode
