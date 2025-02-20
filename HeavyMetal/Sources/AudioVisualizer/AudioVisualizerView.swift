@@ -46,7 +46,8 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         didSet{
             let sliced = Array(frequencyVertices[76..<438])
             freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<Float>.stride, options: [])!
-            metalView.draw()
+            // why is this needed? it freezes the UI
+//            metalView.draw()
         }
     }
     
