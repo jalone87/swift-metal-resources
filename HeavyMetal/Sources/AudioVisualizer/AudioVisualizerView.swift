@@ -32,12 +32,21 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     
     private var vertexBuffer: MTLBuffer!
     
-    private var loudnessUniformBuffer : MTLBuffer! // TODO: this is not initialized first time
+    private var loudnessUniformBuffer : MTLBuffer!
     public var loudnessMagnitude: Float = 0.3 {
         didSet{
             loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
                                                            length: MemoryLayout<Float>.stride,
                                                            options: [])!
+        }
+    }
+    
+    private var freqeuencyBuffer : MTLBuffer!
+    public var frequencyVertices : [Float] = [Float](repeating: 0, count: 361) {
+        didSet{
+            let sliced = Array(frequencyVertices[76..<438])
+            freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<Float>.stride, options: [])!
+            metalView.draw()
         }
     }
     
@@ -54,12 +63,37 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         fatalError()
     }
     
-    fileprivate func setupView() {
+    private func setupView() {
         translatesAutoresizingMaskIntoConstraints = false
- 
     }
     
-    fileprivate func setupMetal(){
+    
+    private func createVertexPoints(){
+        
+        // we want to create a disc, made of triangles in a circle
+        func rads(forDegree d: Float)->Float32{
+            return (Float.pi*d)/180
+        }
+        
+        let origin = simd_float2(0, 0)
+
+        for i in 0...720 {
+            let degree = Float(Float(i)/2.0)
+            let position: simd_float2 = [cos(rads(forDegree: degree)),
+                                         sin(rads(forDegree: degree))]
+            circleVertices.append(position)
+            
+            if (i+1)%2 == 0 {
+                circleVertices.append(origin)
+            }
+        }
+        
+        // Clip space is a 2D coordinate system that maps the viewport area to a [-1.0, 1.0]
+        // this will match the MTKView viewport area (unless we override/redefine it)
+        
+    }
+    
+    private func setupMetal(){
         //view
         addSubview(metalView)
         
@@ -91,11 +125,16 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                               length: circleVertices.count * MemoryLayout<simd_float2>.stride,
                                               options: [])!
         
-        //initialize the freqeuencyBuffer data
+        //initialize the loudnessUniform buffer data
         loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
                                                        length: MemoryLayout<Float>.stride,
                                                        options: [])!
 
+        //initialize the freqeuencyBuffer data
+        freqeuencyBuffer = metalDevice.makeBuffer(bytes: frequencyVertices,
+                                                  length: frequencyVertices.count * MemoryLayout<Float>.stride,
+                                                  options: [])!
+        
         //draw
         metalView.needsDisplay = true
 
@@ -137,7 +176,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //Creating the interface for the pipeline, MTLRenderPassDescriptor. Use defaut one from `currentRenderPassDescriptor`.
         guard let renderDescriptor = view.currentRenderPassDescriptor else {return}
         //Setting a "background color"
-        renderDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 1, 1)
+        renderDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1)
         
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
@@ -149,8 +188,11 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
+        renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
         // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
+        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
+
         
         // --- end --- //
         
@@ -160,31 +202,6 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         // display  in the view. currentDrawable is a drawable representing the current frame
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
-        
-    }
-    
-    private func createVertexPoints(){
-        
-        // we want to create a disc, made of triangles in a circle
-        func rads(forDegree d: Float)->Float32{
-            return (Float.pi*d)/180
-        }
-        
-        let origin = simd_float2(0, 0)
-
-        for i in 0...720 {
-            let degree = Float(Float(i)/2.0)
-            let position: simd_float2 = [cos(rads(forDegree: degree)),
-                                         sin(rads(forDegree: degree))]
-            circleVertices.append(position)
-            
-            if (i+1)%2 == 0 {
-                circleVertices.append(origin)
-            }
-        }
-        
-        // Clip space is a 2D coordinate system that maps the viewport area to a [-1.0, 1.0]
-        // this will match the MTKView viewport area (unless we override/redefine it)
         
     }
 }

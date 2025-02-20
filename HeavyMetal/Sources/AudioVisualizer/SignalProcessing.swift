@@ -100,6 +100,11 @@ class SignalProcessing {
         // -- 2. Calculate a magnitudes of each frequency
         
         //package it inside a complex vector representation used in the vDSP framework
+//        realOut.withUnsafeBufferPointer { realOutBfrPtr in
+//            imagOut.withUnsafeBufferPointer { imagOutBfrPtr in
+//                var complex = DSPSplitComplex(realp: &realOut, imagp: &imagOut)
+//            }
+//        }
         var complex = DSPSplitComplex(realp: &realOut, imagp: &imagOut)
         
         //setup magnitude output

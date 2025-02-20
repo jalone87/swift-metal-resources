@@ -110,6 +110,8 @@ class ViewController: NSViewController {
         
         // calculate fft
         let fftMagnitudes = SignalProcessing.fft(data: channelData, setup: fftSetup!)
+        // TODO: this operation freezes the UI. too heavy most likely, or check the pointers warnings
+        audioVisualizerView.frequencyVertices = fftMagnitudes
     }
 
 }
