@@ -99,19 +99,23 @@ class SignalProcessing {
         
         // -- 2. Calculate a magnitudes of each frequency
         
-        //package it inside a complex vector representation used in the vDSP framework
-//        realOut.withUnsafeBufferPointer { realOutBfrPtr in
-//            imagOut.withUnsafeBufferPointer { imagOutBfrPtr in
-//                var complex = DSPSplitComplex(realp: &realOut, imagp: &imagOut)
-//            }
-//        }
-        var complex = DSPSplitComplex(realp: &realOut, imagp: &imagOut)
-        
         //setup magnitude output
         var magnitudes = [Float](repeating: 0, count: 512)
         
-        //calculate magnitude results
-        vDSP_zvabs(&complex, 1, &magnitudes, 1, 512)
+        //package it inside a complex vector representation used in the vDSP framework
+        realOut.withUnsafeBufferPointer { realOutBfrPtr in
+            imagOut.withUnsafeBufferPointer { imagOutBfrPtr in
+                
+                let realOutMutPtr = UnsafeMutablePointer(mutating: realOutBfrPtr.baseAddress!)
+                let imaglOutMutPtr = UnsafeMutablePointer(mutating: imagOutBfrPtr.baseAddress!)
+                
+                var complex = DSPSplitComplex(realp: realOutMutPtr,
+                                              imagp: imaglOutMutPtr)
+                
+                //calculate magnitude results
+                vDSP_zvabs(&complex, 1, &magnitudes, 1, 512)
+            }
+        }
         
         // -- 3. normalize results with a scaling based uniquely on esthetics of the resutls
         
