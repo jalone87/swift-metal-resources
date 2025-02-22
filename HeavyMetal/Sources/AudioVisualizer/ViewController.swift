@@ -15,7 +15,7 @@ class ViewController: NSViewController {
     var audioVisualizerView: AudioVisualizerView = AudioVisualizerView()
     
     /// allows interpolating values in the UI, since the data tap is only every 0.1s
-    var prevRMSValue: Float = 0.3 // 0.3 is min value
+    var prevRMSValue: Float = SignalProcessing.minMagnitudeLevel
     
     /// fft setup object for 1024 values going forward (time-> frequency)
     /// https://developer.apple.com/documentation/accelerate/1450061-vdsp_dft_zop_createsetup
@@ -27,6 +27,10 @@ class ViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.addSubview(audioVisualizerView)
+        
+        self.view.wantsLayer = true
+        self.view.layer?.isOpaque = false
+        self.view.layer?.backgroundColor = NSColor.clear.cgColor
         
         //constraining to window
         audioVisualizerView.topAnchor.constraint(equalTo: view.topAnchor).isActive = true

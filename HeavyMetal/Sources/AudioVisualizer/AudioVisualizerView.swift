@@ -33,7 +33,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     private var vertexBuffer: MTLBuffer!
     
     private var loudnessUniformBuffer : MTLBuffer!
-    public var loudnessMagnitude: Float = 0.3 {
+    public var loudnessMagnitude: Float = SignalProcessing.minMagnitudeLevel {
         didSet{
             loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
                                                            length: MemoryLayout<Float>.stride,
@@ -41,13 +41,11 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         }
     }
     
-    private var freqeuencyBuffer : MTLBuffer!
-    public var frequencyVertices : [Float] = [Float](repeating: 0, count: 361) {
+    private var freqeuencyBuffer: MTLBuffer!
+    public var frequencyVertices: [Float] = [Float](repeating: 0, count: 361) {
         didSet{
             let sliced = Array(frequencyVertices[76..<438])
-            freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<Float>.stride, options: [])!
-            // why is this needed? it freezes the UI
-//            metalView.draw()
+            freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<simd_float2>.stride, options: [])!
         }
     }
     
@@ -98,6 +96,10 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //view
         addSubview(metalView)
         
+        metalView.clearColor = .init(red: 0.0, green: 0.0, blue: 0.0, alpha: 0)
+        metalView.layer?.isOpaque = false
+        metalView.layer?.backgroundColor = NSColor.clear.cgColor
+        
         metalView.translatesAutoresizingMaskIntoConstraints = false
         metalView.trailingAnchor.constraint(equalTo: trailingAnchor).isActive = true
         metalView.leadingAnchor.constraint(equalTo: leadingAnchor).isActive = true
@@ -131,9 +133,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                                        length: MemoryLayout<Float>.stride,
                                                        options: [])!
 
-        //initialize the freqeuencyBuffer data
+        //initialize the frequencyBuffer data
         freqeuencyBuffer = metalDevice.makeBuffer(bytes: frequencyVertices,
-                                                  length: frequencyVertices.count * MemoryLayout<Float>.stride,
+                                                  length: frequencyVertices.count * MemoryLayout<simd_float2>.stride,
                                                   options: [])!
         
         //draw
@@ -177,7 +179,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //Creating the interface for the pipeline, MTLRenderPassDescriptor. Use defaut one from `currentRenderPassDescriptor`.
         guard let renderDescriptor = view.currentRenderPassDescriptor else {return}
         //Setting a "background color"
-        renderDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1)
+        renderDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 0)
         
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
@@ -191,8 +193,8 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
         // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
         renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
 
         
         // --- end --- //

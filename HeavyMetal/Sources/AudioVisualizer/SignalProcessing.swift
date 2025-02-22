@@ -10,6 +10,9 @@ import Accelerate
 
 class SignalProcessing {
     
+    static let minMagnitudeLevel: Float = 0.3
+    static let maxMagnitudeLevel: Float = 0.6
+    
     /// Calculate the root mean squared of a signal
     /// https://developer.apple.com/documentation/accelerate/vdsp_rmsqv
     static func rms(data: UnsafeMutablePointer<Float>, frameLength: UInt) -> Float {
@@ -31,22 +34,22 @@ class SignalProcessing {
         // values [ 0 , 160 ]
         
         // bring them to a useful scale between intermediated normalized values
-        // let dividor = Float(160/0.3)
-        // let adjustedVal = 0.3 + db/dividor
-        // values [ 0.3 , 0.6 ]
+        // let dividor = Float(160/minMagnitudeLevel)
+        // let adjustedVal = minMagnitudeLevel + db/dividor
+        // values [ minMagnitudeLevel , maxMagnitudeLevel ]
         
         // this way values will be in a very narrow bandwith between 0.53 and 0.58, where audible laudness is. let's use another algorithm, and give more importance to that band
         
         //Only take into account range from 120->160, so FSR = 40
         db = db - 120
-        let dividor = Float(40/0.3)
-        var adjustedVal = 0.3 + db/dividor
+        let dividor = Float(40/minMagnitudeLevel)
+        var adjustedVal = minMagnitudeLevel + db/dividor
         
         //cutoff
-        if (adjustedVal < 0.3) {
-            adjustedVal = 0.3
-        } else if (adjustedVal > 0.6) {
-            adjustedVal = 0.6
+        if (adjustedVal < minMagnitudeLevel) {
+            adjustedVal = minMagnitudeLevel
+        } else if (adjustedVal > maxMagnitudeLevel) {
+            adjustedVal = maxMagnitudeLevel
         }
         
         return adjustedVal
@@ -121,7 +124,8 @@ class SignalProcessing {
         
         //normalize
         var normalizedMagnitudes = [Float](repeating: 0.0, count: 512)
-        var scalingFactor = Float(25.0/512)
+        // note the negative has been added to render the frequency spike toward the center of the circle
+        var scalingFactor = -Float(25.0/512)
         vDSP_vsmul(&magnitudes, 1, &scalingFactor, &normalizedMagnitudes, 1, 512)
         
         return normalizedMagnitudes
