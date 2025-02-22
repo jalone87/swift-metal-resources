@@ -43,10 +43,11 @@ vertex VertexOut vertexShader(const constant vector_float2 *vertexArray [[buffer
         vector_float2 currentVertex = vertexArray[vid];
         
         //populate the output position with the x and y values of our input vertex data
-        output.position = vector_float4(currentVertex.x * circleScaler,
-                                        currentVertex.y * circleScaler, 0, 1);
+        output.position = vector_float4(currentVertex.x * circleScaler * 0.2 - 0.5,
+                                        currentVertex.y * circleScaler * 0.2 + 0.5, 0, 1);
 //        output.color = vector_float4(0,0,0,1); //black
-        output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
+        output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
+//        output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
         
     } else {
         int circleId = vid-1081;
@@ -56,17 +57,18 @@ vertex VertexOut vertexShader(const constant vector_float2 *vertexArray [[buffer
             //place line vertex off circle
             circleVertex = vertexArray[circleId];
             float lineScale = 1 + lineArray[(vid-1081)/3];
-            output.position = vector_float4(circleVertex.x*circleScaler*lineScale,
-                                            circleVertex.y*circleScaler*lineScale, 0, 1);
+            output.position = vector_float4(circleVertex.x*circleScaler*lineScale * 0.5 - 0.5,
+                                            circleVertex.y*circleScaler*lineScale * 0.5 + 0.5, 0, 1);
 //            output.color = vector_float4(0,0,1,1);
             output.color = vector_float4(0.92, 0, 0.85, 1); // fucsia
         } else {
             //place line vertex on circle
             circleVertex = vertexArray[circleId-1];
-            output.position = vector_float4(circleVertex.x*circleScaler,
-                                            circleVertex.y*circleScaler, 0, 1);
+            output.position = vector_float4(circleVertex.x*circleScaler * 0.5 - 0.5,
+                                            circleVertex.y*circleScaler * 0.5 + 0.5, 0, 1);
 //            output.color = vector_float4(1,0,0,1);
-            output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
+//            output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
+            output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
         }
     }
     
