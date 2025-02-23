@@ -154,8 +154,8 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         let library = metalDevice.makeDefaultLibrary()!
         
         //give the names of the function to the pipelineDescriptor
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "vertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "fragmentShader")
+        pipelineDescriptor.vertexFunction = library.makeFunction(name: "eyeVertexShader")
+        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "eyeFragmentShader")
         
         //set the pixel format to match the MetalView's pixel format
         pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
