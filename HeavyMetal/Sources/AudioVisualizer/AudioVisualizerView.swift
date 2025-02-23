@@ -28,7 +28,7 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     // MARK: - Data Properties
     
     /// Array of vectors (SIMD library vectors) that hold x and y coordinates for consecutive triangles
-    var circleVertices = [simd_float2]()
+    private var circleVertices = [simd_float2]()
     
     private var vertexBuffer: MTLBuffer!
     
@@ -187,17 +187,12 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         // We tell it what render pipeline to use
         renderEncoder.setRenderPipelineState(metalRenderPipelineState)
         
-        // --- We'll be encoding commands here --- //
-        
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
         // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 1081, vertexCount: 1081)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
-
-        
-        // --- end --- //
         
         // end the encoding and fire off the commandBuffer to be executed on the GPU
         renderEncoder.endEncoding()
