@@ -149,6 +149,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     // To create a pipeline state, we need a MTLRenderPipelineDescriptor
     fileprivate func createPipelineState(){
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        // maximum number of times the shader can be called with the same id
+        // (to avoid recalculating or duplicating  the input)
+        pipelineDescriptor.maxVertexAmplificationCount = 2
         
         //finds the metal file from the main bundle
         let library = metalDevice.makeDefaultLibrary()!
@@ -183,6 +186,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
+        
+        // we want to apply twice, once er eye. must be < maxVertexAmplificationCount
+        renderEncoder.setVertexAmplificationCount(2, viewMappings: nil)
         
         // We tell it what render pipeline to use
         renderEncoder.setRenderPipelineState(metalRenderPipelineState)
