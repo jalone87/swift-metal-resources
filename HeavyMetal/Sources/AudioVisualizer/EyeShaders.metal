@@ -23,11 +23,19 @@ struct VertexOut {
 
 
 /// - Parameters:
-///     - vertexArray: array of vertex points that we’ll be passing in
-///     - loudnessUniform: single scalar for the magnitude of the laudness
-///     - amp_id: current value of vertex amplification,
-///     - amp_count: total number of vertex amplification,
-///     - vid: “vector id”. This uniquely identifies which vertex we’re currently on; it will be used as the index for our vertexArray
+///     - vertexArray:
+///         array of vertex points that we’ll be passing in
+///     - loudnessUniform:
+///         single scalar for the magnitude of the laudness
+///     - amp_id:
+///         current value of vertex amplification,
+///         - 0 left eye
+///         - 1 right eye
+///     - amp_count:
+///         total number of vertex amplification,
+///         - expected: 2
+///     - vid:
+///         “vector id”. This uniquely identifies which vertex we’re currently on; it will be used as the index for our vertexArray
 ///
 /// - Returns:
 ///     The output is of type VertexOut, which holds a position vector and a color vector.
@@ -41,8 +49,6 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
     
     VertexOut output;
     
-    // moves the eyes circles left or right
-    float mirror = ( amp_id == 0 ) ?  1 : -1;
     float xPosition = ( amp_id == 0 ) ?  - 0.4 : + 0.4;
     float yPosition = 0.5;
     
@@ -65,6 +71,9 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
         
         float xScale = 0.5;
         float yScale = 0.4;
+        
+        // moves the eyes circles left or right
+        float mirror = ( amp_id == 0 ) ?  1 : -1;
         
         if (circleId%3 == 0) {
             //place line vertex off circle
