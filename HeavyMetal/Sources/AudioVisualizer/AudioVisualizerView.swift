@@ -23,11 +23,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     /// the flow of commands to a gpu buffer
     private var metalCommandQueue: MTLCommandQueue!
     
-    private var backgroundRenderPipeline: MTLRenderPipelineState!
-    
-    private var eyesRenderPipeline: MTLRenderPipelineState!
-    
-    private var mouthRenderPipeline: MTLRenderPipelineState!
+    private var eyeRenderer: AvatarEyeRender!
+    private var mouthRenderer: AvatarMouthRender!
+    private var backgroundRenderer: AvatarBackgroundRender!
     
     // MARK: - Data Properties
     
@@ -123,11 +121,6 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //creating the command queue
         metalCommandQueue = metalDevice.makeCommandQueue()!
         
-        //creating the render pipeline state
-        createEyesPipelineState()
-        createMouthPipelineState()
-        createBackgroundPipelineState()
-        
         //creates a MTLBuffer object by copying data from an existing storage allocation into a new allocation.
         //turn the vertex points into buffer data
         vertexBuffer = metalDevice.makeBuffer(bytes: circleVertices,
@@ -144,53 +137,20 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                                   length: frequencyVertices.count * MemoryLayout<simd_float2>.stride,
                                                   options: [])!
         
+        //creating the render pipeline state
+        eyeRenderer = AvatarEyeRender(metalDevice: metalDevice,
+                                      pixelFormat: metalView.colorPixelFormat,
+                                      vertexBuffer: vertexBuffer,
+                                      loudnessUniformBuffer: loudnessUniformBuffer,
+                                      freqeuencyBuffer: freqeuencyBuffer)
+        mouthRenderer = AvatarMouthRender(metalDevice: metalDevice,
+                                          pixelFormat: metalView.colorPixelFormat)
+        backgroundRenderer = AvatarBackgroundRender(metalDevice: metalDevice,
+                                                    pixelFormat: metalView.colorPixelFormat)
+        
         //draw
         metalView.needsDisplay = true
 
-    }
-    
-    // To use MTLRenderCommandEncoder to encode commands for a rendering pass,
-    // specify a MTLRenderPipelineState object that defines the graphics state,
-    // including vertex and fragment shader functions, before issuing any draw calls.
-    // To create a pipeline state, we need a MTLRenderPipelineDescriptor
-    fileprivate func createEyesPipelineState() {
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        // maximum number of times the shader can be called with the same id
-        // (to avoid recalculating or duplicating  the input)
-        pipelineDescriptor.maxVertexAmplificationCount = 2
-        
-        //finds the metal file from the main bundle
-        let library = metalDevice.makeDefaultLibrary()!
-        
-        //give the names of the function to the pipelineDescriptor
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "eyeVertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "eyeFragmentShader")
-        
-        //set the pixel format to match the MetalView's pixel format
-        pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
-        
-        //make the pipelinestate using the gpu interface and the pipelineDescriptor
-        eyesRenderPipeline = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
-    }
-    
-    fileprivate func createMouthPipelineState() {
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.maxVertexAmplificationCount = 2
-        let library = metalDevice.makeDefaultLibrary()!
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "mouthVertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "mouthFragmentShader")
-        pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
-        eyesRenderPipeline = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
-    }
-    
-    fileprivate func createBackgroundPipelineState() {
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.maxVertexAmplificationCount = 2
-        let library = metalDevice.makeDefaultLibrary()!
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "backgroundVertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "backgroundFragmentShader")
-        pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
-        eyesRenderPipeline = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
     // MARK: - MTKViewDelegate
@@ -212,9 +172,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
         
-        drawBackground(renderEncoder: renderEncoder)
-        drawEyes(renderEncoder: renderEncoder)
-        drawMouth(renderEncoder: renderEncoder)
+        backgroundRenderer.render(renderEncoder)
+        eyeRenderer.render(renderEncoder)
+        mouthRenderer.render(renderEncoder)
         
         // end the encoding and fire off the commandBuffer to be executed on the GPU
         renderEncoder.endEncoding()
@@ -223,65 +183,4 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
     }
-    
-    private func drawBackground(renderEncoder: MTLRenderCommandEncoder) {
-        // we want to apply twice, once er eye. must be < maxVertexAmplificationCount
-        renderEncoder.setVertexAmplificationCount(1, viewMappings: nil)
-        renderEncoder.setRenderPipelineState(eyesRenderPipeline)
-    }
-    
-    private func drawEyes(renderEncoder: MTLRenderCommandEncoder) {
-        // we want to apply twice, once er eye. must be < maxVertexAmplificationCount
-        renderEncoder.setVertexAmplificationCount(2, viewMappings: nil)
-        
-        // We tell it what render pipeline to use
-        renderEncoder.setRenderPipelineState(eyesRenderPipeline)
-        
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
-        renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
-        // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
-    }
-    
-    private func drawMouth(renderEncoder: MTLRenderCommandEncoder) {
-        renderEncoder.setVertexAmplificationCount(1, viewMappings: nil)
-        renderEncoder.setRenderPipelineState(mouthRenderPipeline)
-    }
-}
-
-class AudioVisualizerMouthRender {
-    
-    let renderEncoder: MTLRenderCommandEncoder
-    
-    private var renderPipelineState: MTLRenderPipelineState!
-    
-    init(metalDevice: MTLDevice, pixelFormat: MTLPixelFormat) {
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        
-        let library = metalDevice.makeDefaultLibrary()!
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "mouthVertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "mouthFragmentShader")
-        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
-        pipelineDescriptor.maxVertexAmplificationCount = 1
-        
-        renderPipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
-    }
-    
-    func render(_ renderEncoder: MTLRenderCommandEncoder) {
-        // we want to apply twice, once er eye. must be < maxVertexAmplificationCount
-        renderEncoder.setVertexAmplificationCount(2, viewMappings: nil)
-        
-        // We tell it what render pipeline to use
-        renderEncoder.setRenderPipelineState(eyesRenderPipeline)
-        
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
-        renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
-        // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
-    }
-    
 }
