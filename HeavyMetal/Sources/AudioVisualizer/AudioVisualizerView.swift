@@ -36,12 +36,14 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     
     public var loudnessMagnitude: Float = SignalProcessing.minMagnitudeLevel {
         didSet{
+            backgroundRenderer.updateLoudness(&loudnessMagnitude)
             eyeRenderer.updateLoudness(&loudnessMagnitude)
         }
     }
     
     public var frequencyVertices: [Float] = [Float](repeating: 0, count: 361) {
         didSet{
+            backgroundRenderer.updateFrequencies(&frequencyVertices)
             eyeRenderer.updateFrequencies(&frequencyVertices)
         }
     }
@@ -118,16 +120,24 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                               length: circleVertices.count * MemoryLayout<simd_float2>.stride,
                                               options: [])!
         
-        //creating the render pipeline state
-        eyeRenderer = AvatarEyeRender(metalDevice: metalDevice,
-                                      pixelFormat: metalView.colorPixelFormat,
-                                      vertexBuffer: vertexBuffer)
-        mouthRenderer = AvatarMouthRender(metalDevice: metalDevice,
-                                          pixelFormat: metalView.colorPixelFormat)
-        backgroundRenderer = AvatarBackgroundRender(metalDevice: metalDevice,
-                                                    pixelFormat: metalView.colorPixelFormat)
+        // creating the render pipeline states
         
-        //draw
+        eyeRenderer = AvatarEyeRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat,
+            vertexBuffer: vertexBuffer)
+        
+        mouthRenderer = AvatarMouthRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat)
+        
+        backgroundRenderer = AvatarBackgroundRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat,
+            vertexBuffer: vertexBuffer)
+        
+        // draw
+        
         metalView.needsDisplay = true
 
     }

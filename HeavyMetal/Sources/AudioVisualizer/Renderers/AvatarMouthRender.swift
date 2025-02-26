@@ -6,6 +6,7 @@
 //
 
 import Metal
+import simd
 
 class AvatarMouthRender: AvatarRenderer {
     

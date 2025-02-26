@@ -6,6 +6,7 @@
 //
 
 import MetalKit
+import simd
 
 protocol AvatarRenderer {
     
@@ -13,19 +14,18 @@ protocol AvatarRenderer {
     // specify a MTLRenderPipelineState object that defines the graphics state,
     // including vertex and fragment shader functions, before issuing any draw calls.
     // To create a pipeline state, we need a MTLRenderPipelineDescriptor
-    var renderPipelineState: MTLRenderPipelineState { get }
+    //var renderPipelineState: MTLRenderPipelineState { get }
     
 }
 
 class AvatarEyeRender: AvatarRenderer {
     
     private let metalDevice: MTLDevice
+    private let renderPipelineState: MTLRenderPipelineState
     
     private let vertexBuffer: MTLBuffer
     private var loudnessUniformBuffer: MTLBuffer
     private var freqeuencyBuffer: MTLBuffer
-    
-    let renderPipelineState: MTLRenderPipelineState
     
     func updateLoudness(_ magnitude: inout Float) {
         loudnessUniformBuffer = Self.createLodnessBuffer(&magnitude, metalDevice: metalDevice)
