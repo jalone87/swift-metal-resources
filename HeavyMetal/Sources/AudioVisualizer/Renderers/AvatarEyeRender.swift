@@ -19,6 +19,10 @@ protocol AvatarRenderer {
 
 class AvatarEyeRender: AvatarRenderer {
     
+    let vertexBuffer: MTLBuffer
+    let loudnessUniformBuffer: MTLBuffer
+    let freqeuencyBuffer: MTLBuffer
+    
     let renderPipelineState: MTLRenderPipelineState
     
     init(metalDevice: MTLDevice,
@@ -27,6 +31,10 @@ class AvatarEyeRender: AvatarRenderer {
          loudnessUniformBuffer: MTLBuffer,
          freqeuencyBuffer: MTLBuffer)
     {
+        self.vertexBuffer = vertexBuffer
+        self.loudnessUniformBuffer = loudnessUniformBuffer
+        self.freqeuencyBuffer = freqeuencyBuffer
+        
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         // maximum number of times the shader can be called with the same id
         // (to avoid recalculating or duplicating  the input)
