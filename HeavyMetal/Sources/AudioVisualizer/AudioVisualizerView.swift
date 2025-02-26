@@ -34,20 +34,15 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     
     private var vertexBuffer: MTLBuffer!
     
-    private var loudnessUniformBuffer : MTLBuffer!
     public var loudnessMagnitude: Float = SignalProcessing.minMagnitudeLevel {
         didSet{
-            loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
-                                                           length: MemoryLayout<Float>.stride,
-                                                           options: [])!
+            eyeRenderer.updateLoudness(&loudnessMagnitude)
         }
     }
     
-    private var freqeuencyBuffer: MTLBuffer!
     public var frequencyVertices: [Float] = [Float](repeating: 0, count: 361) {
         didSet{
-            let sliced = Array(frequencyVertices[76..<438])
-            freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<simd_float2>.stride, options: [])!
+            eyeRenderer.updateFrequencies(&frequencyVertices)
         }
     }
     
@@ -110,10 +105,6 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
         metalView.delegate = self
         
-        //updates are automatic. these shall be enabled only if we want to disable automatic metal updates
-        // metalView.isPaused = true
-        // metalView.enableSetNeedsDisplay = true
-        
         //connect to the gpu
         metalDevice = MTLCreateSystemDefaultDevice()
         metalView.device = metalDevice
@@ -127,22 +118,10 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
                                               length: circleVertices.count * MemoryLayout<simd_float2>.stride,
                                               options: [])!
         
-        //initialize the loudnessUniform buffer data
-        loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
-                                                       length: MemoryLayout<Float>.stride,
-                                                       options: [])!
-
-        //initialize the frequencyBuffer data
-        freqeuencyBuffer = metalDevice.makeBuffer(bytes: frequencyVertices,
-                                                  length: frequencyVertices.count * MemoryLayout<simd_float2>.stride,
-                                                  options: [])!
-        
         //creating the render pipeline state
         eyeRenderer = AvatarEyeRender(metalDevice: metalDevice,
                                       pixelFormat: metalView.colorPixelFormat,
-                                      vertexBuffer: vertexBuffer,
-                                      loudnessUniformBuffer: loudnessUniformBuffer,
-                                      freqeuencyBuffer: freqeuencyBuffer)
+                                      vertexBuffer: vertexBuffer)
         mouthRenderer = AvatarMouthRender(metalDevice: metalDevice,
                                           pixelFormat: metalView.colorPixelFormat)
         backgroundRenderer = AvatarBackgroundRender(metalDevice: metalDevice,

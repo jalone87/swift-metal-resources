@@ -19,21 +19,51 @@ protocol AvatarRenderer {
 
 class AvatarEyeRender: AvatarRenderer {
     
-    let vertexBuffer: MTLBuffer
-    let loudnessUniformBuffer: MTLBuffer
-    let freqeuencyBuffer: MTLBuffer
+    private let metalDevice: MTLDevice
+    
+    private let vertexBuffer: MTLBuffer
+    private var loudnessUniformBuffer: MTLBuffer
+    private var freqeuencyBuffer: MTLBuffer
     
     let renderPipelineState: MTLRenderPipelineState
     
+    func updateLoudness(_ magnitude: inout Float) {
+        loudnessUniformBuffer = Self.createLodnessBuffer(&magnitude, metalDevice: metalDevice)
+    }
+    
+    static private func createLodnessBuffer(_ magnitude: inout Float, metalDevice: MTLDevice) -> MTLBuffer {
+        return metalDevice.makeBuffer(
+            bytes: &magnitude,
+            length: MemoryLayout<Float>.stride,
+            options: []
+        )!
+    }
+    
+    func updateFrequencies(_ frequencies: inout [Float]) {
+        var sliced = Array(frequencies[76..<438])
+        freqeuencyBuffer = Self.createFrequenciesBuffer(&sliced, metalDevice: metalDevice)
+    }
+    
+    static func createFrequenciesBuffer(_ frequencies: inout [Float], metalDevice: MTLDevice) -> MTLBuffer {
+        return metalDevice.makeBuffer(
+            bytes: frequencies,
+            length: frequencies.count * MemoryLayout<simd_float2>.stride,
+            options: []
+        )!
+    }
+    
     init(metalDevice: MTLDevice,
          pixelFormat: MTLPixelFormat,
-         vertexBuffer: MTLBuffer,
-         loudnessUniformBuffer: MTLBuffer,
-         freqeuencyBuffer: MTLBuffer)
+         vertexBuffer: MTLBuffer)
     {
+        self.metalDevice = metalDevice
+        
         self.vertexBuffer = vertexBuffer
-        self.loudnessUniformBuffer = loudnessUniformBuffer
-        self.freqeuencyBuffer = freqeuencyBuffer
+        
+        var initialMagnitude: Float = 0
+        self.loudnessUniformBuffer = Self.createLodnessBuffer(&initialMagnitude, metalDevice: metalDevice)
+        var initialFrequencies = [Float](repeating: 0, count: 361)
+        self.freqeuencyBuffer = Self.createFrequenciesBuffer(&initialFrequencies, metalDevice: metalDevice)
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         // maximum number of times the shader can be called with the same id
