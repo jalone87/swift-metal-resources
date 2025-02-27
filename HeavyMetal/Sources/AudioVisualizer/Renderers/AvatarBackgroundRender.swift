@@ -42,6 +42,9 @@ class AvatarBackgroundRender: AvatarRenderer {
         )!
     }
     
+    private var initialMagnitude: Float = 0
+    private var initialFrequencies = [Float](repeating: 0, count: 361)
+    
     init(metalDevice: MTLDevice,
          pixelFormat: MTLPixelFormat,
          vertexBuffer: MTLBuffer)
@@ -49,10 +52,7 @@ class AvatarBackgroundRender: AvatarRenderer {
         self.metalDevice = metalDevice
         
         self.vertexBuffer = vertexBuffer
-        
-        var initialMagnitude: Float = 0
         self.loudnessUniformBuffer = Self.createLodnessBuffer(&initialMagnitude, metalDevice: metalDevice)
-        var initialFrequencies = [Float](repeating: 0, count: 361)
         self.freqeuencyBuffer = Self.createFrequenciesBuffer(&initialFrequencies, metalDevice: metalDevice)
         
         let pipelineDescriptor = MTLRenderPipelineDescriptor()

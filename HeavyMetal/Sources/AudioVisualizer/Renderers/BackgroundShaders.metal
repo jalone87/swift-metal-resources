@@ -59,7 +59,7 @@ vertex VertexOut backgroundVertexShader(const constant vector_float2 *vertexArra
         output.position = vector_float4(currentVertex.x * circleScaler * 0.2 + xPosition,
                                         currentVertex.y * circleScaler * 0.2 + yPosition, 0, 1);
 //        output.color = vector_float4(0,0,0,1); //black
-        output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
+        output.color = vector_float4(0.04, 0.74, 0.78, 0.01); // cyan
 //        output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
         
     } else {
