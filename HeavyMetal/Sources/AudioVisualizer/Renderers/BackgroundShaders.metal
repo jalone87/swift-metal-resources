@@ -51,29 +51,31 @@ vertex VertexOut backgroundVertexShader(const constant vector_float2 *vertexArra
     float yPosition = 0.0;
     
     if (vid < 1081) {
-        float circleScaler = loudnessUniform[0];
+//        float circleScaler = loudnessUniform[0];
+        float circleScaler = 0.8;
         //fetch the current vertex we're on using the vid to index into our buffer data which holds all of our vertex points that we passed in
         vector_float2 currentVertex = vertexArray[vid];
         
         //populate the output position with the x and y values of our input vertex data
-        output.position = vector_float4(currentVertex.x * circleScaler * 0.2 + xPosition,
-                                        currentVertex.y * circleScaler * 0.2 + yPosition, 0, 1);
+        output.position = vector_float4(currentVertex.x * circleScaler * 1 + xPosition,
+                                        currentVertex.y * circleScaler * 1 + yPosition, 0, 1);
 //        output.color = vector_float4(0,0,0,1); //black
-        output.color = vector_float4(0.04, 0.74, 0.78, 0.01); // cyan
+        output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
 //        output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
         
     } else {
         int circleId = vid-1081;
         vector_float2 circleVertex;
-        float circleScaler = 0.6 - (loudnessUniform[0]*0.1);
+//        float circleScaler = 0.6 - (loudnessUniform[0]*0.1);
+        float circleScaler = 0.8;
         
-        float xScale = 0.9;
-        float yScale = 0.9;
+        float xScale = 1;
+        float yScale = 1;
         
         if (circleId%3 == 0) {
             //place line vertex off circle
             circleVertex = vertexArray[circleId];
-            float lineScale = 1 + lineArray[(vid-1081)/3];
+            float lineScale = 1 - lineArray[(vid-1081)/3];
             output.position = vector_float4(circleVertex.x * circleScaler * lineScale * xScale + xPosition,
                                             circleVertex.y * circleScaler * lineScale * yScale + yPosition, 0, 1);
             output.color = vector_float4(0.92, 0, 0.85, 1); // fucsia

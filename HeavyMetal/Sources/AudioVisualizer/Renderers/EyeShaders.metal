@@ -49,8 +49,8 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
     
     VertexOut output;
     
-    float xPosition = ( amp_id == 0 ) ?  - 0.4 : + 0.4;
-    float yPosition = 0.5;
+    float xPosition = ( amp_id == 0 ) ?  - 0.3 : + 0.3;
+    float yPosition = 0.4;
     
     if (vid < 1081) {
         float circleScaler = loudnessUniform[0];
@@ -62,6 +62,7 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
                                         currentVertex.y * circleScaler * 0.2 + yPosition, 0, 1);
 //        output.color = vector_float4(0,0,0,1); //black
         output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
+        output.color = vector_float4(0.02, 0.54, 0.58, 1); // dark cyan
 //        output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
         
     } else {
@@ -88,7 +89,8 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
             output.position = vector_float4(mirror * circleVertex.x * circleScaler * xScale + xPosition,
                                                      circleVertex.y * circleScaler * yScale + yPosition, 0, 1);
             // output.color = vector_float4(0.04, 0.09, 0.2, 1); // blue
-            output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
+//            output.color = vector_float4(0.04, 0.74, 0.78, 1); // cyan
+            output.color = vector_float4(0.02, 0.54, 0.58, 1); // dark cyan
         }
     }
     

@@ -60,8 +60,17 @@ class AvatarBackgroundRender: AvatarRenderer {
         let library = metalDevice.makeDefaultLibrary()!
         pipelineDescriptor.vertexFunction = library.makeFunction(name: "backgroundVertexShader")
         pipelineDescriptor.fragmentFunction = library.makeFunction(name: "backgroundFragmentShader")
-        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
         pipelineDescriptor.maxVertexAmplificationCount = 1
+        
+        pipelineDescriptor.colorAttachments[0].pixelFormat = pixelFormat
+        // the followings allow translucent colors
+//        pipelineDescriptor.colorAttachments[0].isBlendingEnabled = true
+//        pipelineDescriptor.colorAttachments[0].rgbBlendOperation = .add
+//        pipelineDescriptor.colorAttachments[0].alphaBlendOperation = .add
+//        pipelineDescriptor.colorAttachments[0].sourceAlphaBlendFactor = .sourceAlpha
+//        pipelineDescriptor.colorAttachments[0].destinationAlphaBlendFactor = .oneMinusSourceAlpha
+//        pipelineDescriptor.colorAttachments[0].sourceRGBBlendFactor = .sourceAlpha
+//        pipelineDescriptor.colorAttachments[0].destinationRGBBlendFactor = .oneMinusSourceAlpha
         
         renderPipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }

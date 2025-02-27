@@ -96,7 +96,7 @@ class AvatarEyeRender: AvatarRenderer {
         renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
         renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
         // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
+        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 1081, vertexCount: 1081)
         renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
     }
     
