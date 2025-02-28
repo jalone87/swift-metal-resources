@@ -1,8 +1,8 @@
 //
-//  shaders.metal
+//  MouthShaders.metal
 //  HeavyMetal
 //
-//  Created by Lorenzo Tognalini on 08.02.25.
+//  Created by Lorenzo Tognalini on 23.02.25.
 //
 
 #include <metal_stdlib>
@@ -39,12 +39,12 @@ struct VertexOut {
 ///
 /// - Returns:
 ///     The output is of type VertexOut, which holds a position vector and a color vector.
-vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buffer(0)]],
-                                 const constant float *loudnessUniform [[buffer(1)]],
-                                 const constant float *lineArray[[buffer(2)]],
-                                 const ushort amp_id [[amplification_id]],
-                                 const ushort amp_count [[amplification_count]],
-                                 unsigned int vid [[vertex_id]])
+vertex VertexOut mouthVertexShader(const constant vector_float2 *vertexArray [[buffer(0)]],
+                                   const constant float *loudnessUniform [[buffer(1)]],
+                                   const constant float *lineArray[[buffer(2)]],
+                                   const ushort amp_id [[amplification_id]],
+                                   const ushort amp_count [[amplification_count]],
+                                   unsigned int vid [[vertex_id]])
 {
     
     VertexOut output;
@@ -99,6 +99,6 @@ vertex VertexOut eyeVertexShader(const constant vector_float2 *vertexArray [[buf
 ///     - interpolated: The [[stage_in]] attribute tells the metal that the variable should be fed in the interpolated result of the rasterizer.
 /// - Returns:
 ///     The output is just an <R, G, B, A> color that we fetch from the VertexOut struct that was passed through from the vertexShader function.
-fragment vector_float4 eyeFragmentShader(VertexOut interpolated [[stage_in]]){
+fragment vector_float4 mouthFragmentShader(VertexOut interpolated [[stage_in]]){
     return interpolated.color;
 };

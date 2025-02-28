@@ -23,7 +23,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     /// the flow of commands to a gpu buffer
     private var metalCommandQueue: MTLCommandQueue!
     
-    private var metalRenderPipelineState : MTLRenderPipelineState!
+    private var eyeRenderer: AvatarEyeRender!
+    private var mouthRenderer: AvatarMouthRender!
+    private var backgroundRenderer: AvatarBackgroundRender!
     
     // MARK: - Data Properties
     
@@ -32,20 +34,17 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
     
     private var vertexBuffer: MTLBuffer!
     
-    private var loudnessUniformBuffer : MTLBuffer!
     public var loudnessMagnitude: Float = SignalProcessing.minMagnitudeLevel {
         didSet{
-            loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
-                                                           length: MemoryLayout<Float>.stride,
-                                                           options: [])!
+            backgroundRenderer.updateLoudness(&loudnessMagnitude)
+            eyeRenderer.updateLoudness(&loudnessMagnitude)
         }
     }
     
-    private var freqeuencyBuffer: MTLBuffer!
     public var frequencyVertices: [Float] = [Float](repeating: 0, count: 361) {
         didSet{
-            let sliced = Array(frequencyVertices[76..<438])
-            freqeuencyBuffer = metalDevice.makeBuffer(bytes: sliced, length: sliced.count * MemoryLayout<simd_float2>.stride, options: [])!
+            backgroundRenderer.updateFrequencies(&frequencyVertices)
+            eyeRenderer.updateFrequencies(&frequencyVertices)
         }
     }
     
@@ -108,10 +107,6 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         
         metalView.delegate = self
         
-        //updates are automatic. these shall be enabled only if we want to disable automatic metal updates
-        // metalView.isPaused = true
-        // metalView.enableSetNeedsDisplay = true
-        
         //connect to the gpu
         metalDevice = MTLCreateSystemDefaultDevice()
         metalView.device = metalDevice
@@ -119,53 +114,32 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //creating the command queue
         metalCommandQueue = metalDevice.makeCommandQueue()!
         
-        //creating the render pipeline state
-        createPipelineState()
-        
         //creates a MTLBuffer object by copying data from an existing storage allocation into a new allocation.
         //turn the vertex points into buffer data
         vertexBuffer = metalDevice.makeBuffer(bytes: circleVertices,
                                               length: circleVertices.count * MemoryLayout<simd_float2>.stride,
                                               options: [])!
         
-        //initialize the loudnessUniform buffer data
-        loudnessUniformBuffer = metalDevice.makeBuffer(bytes: &loudnessMagnitude,
-                                                       length: MemoryLayout<Float>.stride,
-                                                       options: [])!
-
-        //initialize the frequencyBuffer data
-        freqeuencyBuffer = metalDevice.makeBuffer(bytes: frequencyVertices,
-                                                  length: frequencyVertices.count * MemoryLayout<simd_float2>.stride,
-                                                  options: [])!
+        // creating the render pipeline states
         
-        //draw
+        eyeRenderer = AvatarEyeRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat,
+            vertexBuffer: vertexBuffer)
+        
+        mouthRenderer = AvatarMouthRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat)
+        
+        backgroundRenderer = AvatarBackgroundRender(
+            metalDevice: metalDevice,
+            pixelFormat: metalView.colorPixelFormat,
+            vertexBuffer: vertexBuffer)
+        
+        // draw
+        
         metalView.needsDisplay = true
 
-    }
-    
-    // To use MTLRenderCommandEncoder to encode commands for a rendering pass,
-    // specify a MTLRenderPipelineState object that defines the graphics state,
-    // including vertex and fragment shader functions, before issuing any draw calls.
-    // To create a pipeline state, we need a MTLRenderPipelineDescriptor
-    fileprivate func createPipelineState(){
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        // maximum number of times the shader can be called with the same id
-        // (to avoid recalculating or duplicating  the input)
-        pipelineDescriptor.maxVertexAmplificationCount = 2
-        
-        //finds the metal file from the main bundle
-        let library = metalDevice.makeDefaultLibrary()!
-        
-        //give the names of the function to the pipelineDescriptor
-        pipelineDescriptor.vertexFunction = library.makeFunction(name: "eyeVertexShader")
-        pipelineDescriptor.fragmentFunction = library.makeFunction(name: "eyeFragmentShader")
-        
-        //set the pixel format to match the MetalView's pixel format
-        pipelineDescriptor.colorAttachments[0].pixelFormat = metalView.colorPixelFormat
-        
-        //make the pipelinestate using the gpu interface and the pipelineDescriptor
-        metalRenderPipelineState = try! metalDevice.makeRenderPipelineState(descriptor: pipelineDescriptor)
-        
     }
     
     // MARK: - MTKViewDelegate
@@ -187,18 +161,9 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         //Creating the command encoder, MTLRenderCommandEncoder, or the "inside" of the pipeline
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderDescriptor) else {return}
         
-        // we want to apply twice, once er eye. must be < maxVertexAmplificationCount
-        renderEncoder.setVertexAmplificationCount(2, viewMappings: nil)
-        
-        // We tell it what render pipeline to use
-        renderEncoder.setRenderPipelineState(metalRenderPipelineState)
-        
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.setVertexBuffer(loudnessUniformBuffer, offset: 0, index: 1)
-        renderEncoder.setVertexBuffer(freqeuencyBuffer, offset: 0, index: 2)
-        // triangleStrip makes sure the triangles overlap properly and no artifacts are shown
-        renderEncoder.drawPrimitives(type: .lineStrip, vertexStart: 1081, vertexCount: 1081)
-        renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 1081)
+        backgroundRenderer.render(renderEncoder)
+        eyeRenderer.render(renderEncoder)
+        mouthRenderer.render(renderEncoder)
         
         // end the encoding and fire off the commandBuffer to be executed on the GPU
         renderEncoder.endEncoding()
@@ -206,6 +171,5 @@ class AudioVisualizerView: NSView, MTKViewDelegate {
         // display  in the view. currentDrawable is a drawable representing the current frame
         commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
-        
     }
 }
