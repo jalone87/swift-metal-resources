@@ -98,7 +98,7 @@ class ViewController: NSViewController {
         player.play()
     }
     
-    func processAudioData(buffer: AVAudioPCMBuffer){
+    func processAudioData(buffer: AVAudioPCMBuffer) {
         guard let channelData = buffer.floatChannelData?[0] else {return}
         let frames = buffer.frameLength
         
